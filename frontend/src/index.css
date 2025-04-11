@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Базовые стили */
+body {
+  @apply bg-kino-dark text-white min-h-screen;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Компоненты */
+.kino-btn {
+  @apply bg-kino-yellow text-black font-medium rounded-lg px-4 py-2;
+  transition: all 0.2s;
+}
+.kino-btn:hover {
+  background-color: #f59e0b; /* Явно указываем amber-500 */
+}
+
+.kino-card {
+  @apply bg-kino-gray rounded-lg overflow-hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+}
+.kino-card:hover {
+  box-shadow: 0 10px 15px rgba(255, 216, 10, 0.2);
+}
