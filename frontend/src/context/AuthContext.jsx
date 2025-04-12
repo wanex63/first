@@ -1,43 +1,75 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { auth } from '../firebase';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged
-} from 'firebase/auth';
+import axios from 'axios';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  function signup(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
-  }
-
-  function login(email, password) {
-    return signInWithEmailAndPassword(auth, email, password);
-  }
-
-  function logout() {
-    return signOut(auth);
-  }
-
+  // Загружаем токены из localStorage
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-    });
-    return unsubscribe;
+    const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('accessToken');
+
+    if (storedUser && storedToken) {
+      setCurrentUser(JSON.parse(storedUser));
+      setAccessToken(storedToken);
+    }
+
+    setLoading(false);
   }, []);
+
+  const login = async (email, password) => {
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/token/', {
+        email,
+        password,
+      });
+
+      const { access, refresh } = response.data;
+
+      const user = { email };
+      setCurrentUser(user);
+      setAccessToken(access);
+
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('accessToken', access);
+      localStorage.setItem('refreshToken', refresh);
+    } catch (error) {
+      console.error('Ошибка при входе:', error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    setAccessToken(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  };
+
+  const signup = async (email, password) => {
+    try {
+      await axios.post('http://127.0.0.1:8000/api/register/', {
+        email,
+        password,
+      });
+      await login(email, password);
+    } catch (error) {
+      console.error('Ошибка при регистрации:', error);
+      throw error;
+    }
+  };
 
   const value = {
     currentUser,
-    signup,
+    accessToken,
     login,
     logout,
+    signup,
   };
 
   return (

@@ -11,6 +11,7 @@ import SignUp from './pages/SignUp';
 import MainLayout from './components/layouts/MainLayout';
 import AuthLayout from './components/layouts/AuthLayout';
 import NotFoundPage from './pages/NotFoundPage';
+import { AuthProvider } from './context/AuthContext';
 
 // Типизация для ProtectedRoute
 interface ProtectedRouteProps {
@@ -27,7 +28,7 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
   }, [currentUser, navigate]);
 
-  return currentUser ? children : null;
+  return currentUser ? <>{children}</> : null;
 }
 
 const router = createBrowserRouter([
@@ -72,5 +73,9 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  );
 }

@@ -14,6 +14,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [genreQuery, setGenreQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const moviesPerPage = 10;
 
   useEffect(() => {
     const fetchMovies = async () => {
@@ -21,7 +25,8 @@ export default function HomePage() {
         const response = await axios.get('https://api.kinopoisk.dev/v1.4/movie', {
           params: {
             lists: 'top250',
-            limit: 10,
+            page: currentPage,
+            limit: 50,
             selectFields: ['id', 'name', 'year', 'rating', 'poster', 'genres']
           },
           headers: {
@@ -39,6 +44,7 @@ export default function HomePage() {
         }));
 
         setMovies(formattedMovies);
+        setTotalPages(response.data.pages);
       } catch (err) {
         console.error('Error fetching movies:', err);
         setError('Не удалось загрузить фильмы. Попробуйте позже.');
@@ -48,11 +54,22 @@ export default function HomePage() {
     };
 
     fetchMovies();
-  }, []);
+  }, [currentPage]);
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Сбрасываем страницу на первую при изменении запроса
+  };
 
   const filteredMovies = movies.filter(movie =>
-    movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+    movie.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    movie.genre.toLowerCase().includes(genreQuery.toLowerCase())
   );
+
+  // Пагинация для других фильмов (по 10 штук на странице)
+  const indexOfLastMovie = currentPage * moviesPerPage;
+  const indexOfFirstMovie = indexOfLastMovie - moviesPerPage;
+  const currentMovies = filteredMovies.slice(indexOfFirstMovie, indexOfLastMovie);
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error} />;
@@ -61,12 +78,15 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="container mx-auto px-4 py-8">
         {/* Шапка */}
-        <header className="flex flex-col md:flex-row justify-between items-center mb-8 p-4 bg-gray-800 rounded-lg gap-4">
-          <h1 className="text-2xl font-bold text-yellow-500">
-            {searchQuery ? `Поиск: "${searchQuery}"` : 'Топ фильмов с Кинопоиска'}
+        <header className="flex justify-between items-center mb-8 p-4 bg-gray-800 rounded-lg gap-4">
+          <h1 className="text-4xl font-bold text-yellow-500 text-center w-full">
+            {searchQuery ? `Поиск: "${searchQuery}"` : 'Кинопоиск'}
           </h1>
+        </header>
 
-          <div className="flex items-center gap-4">
+        {/* Линия с кнопками и поиском по жанрам */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex gap-4">
             {currentUser ? (
               <Link
                 to="/profile"
@@ -95,21 +115,62 @@ export default function HomePage() {
               <span className="hidden sm:inline">Избранное</span>
             </Link>
           </div>
-        </header>
+          {/* Поиск по жанрам */}
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Введите жанр..."
+              value={genreQuery}
+              onChange={e => setGenreQuery(e.target.value)}
+              className="p-2 text-gray-800 rounded-lg"
+            />
+          </div>
+        </div>
 
-        {/* Поиск */}
-        <SearchBar onSearch={setSearchQuery} className="mb-8" />
+        {/* Топ 5 фильмов */}
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold text-yellow-500 mb-4">Топ 5 фильмов</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {filteredMovies.slice(0, 5).map(movie => (
+              <MovieCard key={movie.id} movie={movie} />
+            ))}
+          </div>
+        </section>
 
-        {/* Список фильмов */}
-        {filteredMovies.length > 0 ? (
+        {/* Поиск по фильмам */}
+        <SearchBar onSearch={handleSearchChange} className="mb-8" />
+
+        {/* Отображение оставшихся фильмов с пагинацией */}
+        {currentMovies.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredMovies.map(movie => (
+            {currentMovies.map(movie => (
               <MovieCard key={movie.id} movie={movie} />
             ))}
           </div>
         ) : (
           <div className="text-center py-12">
             <p className="text-xl text-gray-400">Ничего не найдено</p>
+          </div>
+        )}
+
+        {/* Пагинация */}
+        {filteredMovies.length > moviesPerPage && (
+          <div className="flex justify-center mt-8">
+            <button
+              onClick={() => setCurrentPage(prevPage => Math.max(prevPage - 1, 1))}
+              className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-400 transition-colors"
+            >
+              Предыдущая
+            </button>
+            <span className="mx-4 text-lg text-yellow-500">
+              Страница {currentPage}
+            </span>
+            <button
+              onClick={() => setCurrentPage(prevPage => prevPage + 1)}
+              className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-400 transition-colors"
+            >
+              Следующая
+            </button>
           </div>
         )}
       </div>

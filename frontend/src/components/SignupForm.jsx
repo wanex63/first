@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const LoginForm = () => {
+const SignupForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { signup } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -14,16 +14,16 @@ const LoginForm = () => {
     setError('');
 
     try {
-      await login(email, password);
-      navigate('/');  // Переход на главную страницу после успешного входа
+      await signup(email, password);
+      navigate('/');  // Переход на главную страницу после успешной регистрации
     } catch (err) {
-      setError('Не удалось войти. Проверьте email и пароль.');
+      setError('Не удалось зарегистрироваться. Попробуйте позже.');
     }
   };
 
   return (
     <div className="max-w-sm mx-auto p-6 bg-gray-800 rounded-lg shadow-lg">
-      <h2 className="text-2xl text-center text-white mb-4">Войти</h2>
+      <h2 className="text-2xl text-center text-white mb-4">Регистрация</h2>
       {error && <p className="text-red-500 text-center mb-4">{error}</p>}
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
@@ -52,11 +52,11 @@ const LoginForm = () => {
           type="submit"
           className="w-full py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-400"
         >
-          Войти
+          Зарегистрироваться
         </button>
       </form>
     </div>
   );
 };
 
-export default LoginForm;
+export default SignupForm;
